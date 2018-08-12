@@ -1,0 +1,21 @@
+{
+  "name": "oldowan",
+  "version": "1.0.0-preview-2",
+  "description": "A primitive build system",
+  "main": "index.js",  
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "files": [
+    "index.js"
+  ],
+  "keywords": [
+    "build"
+  ],
+  "author": "Andrey Shchekin (https://github.com/ashmind)",
+  "license": "MIT",
+  "repository": "https://github.com/ashmind/oldowan",
+  "dependencies": {
+    "gaze": "^1.1.3"
+  }
+}
