@@ -41,12 +41,12 @@ run();
 node build.js [taskname] [--watch]
 ```
 
-`taskname` — if not specified, defaults to `default`
+`taskname` — if not specified, defaults to `default`  
 `--watch` — instructs Oldowan to watch and rerun tasks based on `inputs`
 
 # Plugins
 
-Oldowan does not support or encourange any plugins (such as `gulp-less`).
+Oldowan does not support or encourange any plugins (such as `gulp-less`).  
 Over a period of using Gulp I noticed that:
 1. Plugins tend to become oudated pretty quickly, and use obsolete versions of underlying tools
 2. Plugins sometimes introduce new issues, e.g. lose source maps or break down when combined with other plugins
