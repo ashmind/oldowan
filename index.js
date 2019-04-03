@@ -62,11 +62,31 @@ function watchTask(name, task, { inputs }) {
     if (!inputs)
         throw new Error(`Task ${name} has no inputs and cannot be watched.`);
 
+    let running = false;
+    let queued = false;
     const gaze = new Gaze(inputs, { debounceDelay: 500 });
-    gaze.on('all', (event, fullPath) => {
+    gaze.on('all', async (event, fullPath) => {
         console.log(`task ${name} detected:`);
         console.log(`  [${event}] ${path.relative(process.cwd(), fullPath)}`);
-        task();
+        if (running || queued) {
+            console.log(`task ${name} queued...`);
+            queued = true;
+            return;
+        }
+
+        do {
+            running = true;
+            queued = false;
+            try {
+                await Promise.resolve(task());
+            }
+            catch (e) {
+                console.error(e);
+            }
+            finally {
+                running = false;
+            }
+        } while (queued);
     });
     gaze.on('error', e => {
         console.error(`task watch error: ${e}`);
