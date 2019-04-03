@@ -2,7 +2,7 @@
   "name": "oldowan",
   "version": "1.0.0-preview-2",
   "description": "A primitive build system",
-  "main": "index.js",  
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
