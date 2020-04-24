@@ -1,0 +1,17 @@
+{
+    "exclude": [
+        "dist/**/*.*"
+    ],
+    "compilerOptions": {
+        "target": "ES2018",
+        "moduleResolution": "node",
+        "checkJs": true,
+        "allowJs": true,
+        "noEmit": true,
+        "noImplicitAny": true,
+        "strict": true,
+        "importsNotUsedAsValues": "error",
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true
+    }
+}
