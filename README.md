@@ -80,17 +80,17 @@ Tasks required twice will be called twice, there is currently no de-duplication.
 
 ## npm scripts
 
-Oldowan might be a good addition to `npm scripts` if you need a bit of cross-platform complexity.
+Oldowan might be a good addition to `npm` scripts if you need a bit of cross-platform complexity.  
 Built-in `exec` helper should be enough for many scenarios.
 
 ## Gulp
 
-Oldowan build file is probably going to be way larger than a Gulp build file.
+Oldowan build file is probably going to be way larger than a Gulp build file.  
 However the flow is also clearer and easier to debug, and it's easier to avoid edge cases (e.g. with sourcemaps).
 
 I've also noticed that Oldowan is faster in some flows, probably because of issues in specific plugins.
 
 ## Webpack
 
-I don't use Webpack that much, so hard to judge, but if you have a big project, Webpack might be a better watcher.
+I don't use Webpack that much, so hard to judge, but if you have a big project, Webpack might be a better watcher.  
 You can use Oldowan to orchestrate Webpack with some other tools that it does not support directly.
