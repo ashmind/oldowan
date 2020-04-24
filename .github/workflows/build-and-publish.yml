@@ -1,0 +1,19 @@
+name: Build and Publish
+
+on: [push, pull_request]
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12.16.2
+    - run: npm ci
+    - run: npm run build
+    - if: github.ref == 'refs/heads/master'
+      run: npm publish --dry-run
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
