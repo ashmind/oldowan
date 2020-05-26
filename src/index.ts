@@ -1,6 +1,6 @@
-import path from 'path';
 import execa from 'execa';
-import { Gaze } from 'gaze';
+import type { Task, TaskFunction } from './task';
+import { makeWatch } from './watch';
 
 function formatDuration([seconds, nanoseconds]: [number, number]) {
     if (seconds === 0) {
@@ -15,17 +15,6 @@ function formatDuration([seconds, nanoseconds]: [number, number]) {
         return `${seconds}.${Math.round(nanoseconds / 10000000)}s`;
 
     return `${Math.floor(seconds / 60)}m${seconds % 60}s`;
-}
-
-type TaskFunction = () => Promise<void>;
-
-interface Task {
-    name: string;
-    run: TaskFunction;
-    ranAtLeastOnce?: boolean;
-    watch: () => void;
-    inputs?: ReadonlyArray<string>;
-    watching?: boolean;
 }
 
 interface TaskError extends Error {
@@ -45,48 +34,6 @@ function processTaskError(e: Readonly<Error|TaskError>, taskName: string) {
     throw error;
 }
 
-function watchTask(task: Task) {
-    const { name, inputs, run } = task;
-    if (!inputs)
-        throw new Error(`Task ${name} has no inputs and cannot be watched.`);
-
-    let running = false;
-    let queued = false;
-    const gaze = new Gaze(inputs as string[], { debounceDelay: 500 }) as Gaze & {
-        // seems to be missing from Gaze types
-        on(type: 'all', callback: (event: string, fullPath: string) => void): void;
-        on(type: 'error', callback: (e: unknown) => void): void;
-    };
-    gaze.on('all', async (event, fullPath) => {
-        console.log(`task ${name} detected:`);
-        console.log(`  [${event}] ${path.relative(process.cwd(), fullPath)}`);
-        if (running || queued) {
-            console.log(`task ${name} queued...`);
-            queued = true;
-            return;
-        }
-
-        do {
-            running = true;
-            queued = false;
-            try {
-                await Promise.resolve(run());
-            }
-            catch (e) {
-                console.error(e);
-            }
-            finally {
-                running = false;
-            }
-        } while (queued);
-    });
-    gaze.on('error', e => {
-        console.error(`task watch error: ${e}`);
-        process.exit(1);
-    });
-    console.log(`task ${name} watching...`);
-}
-
 const tasks = {} as {
     [name: string]: Task;
 };
@@ -96,14 +43,14 @@ function watchAll() {
     for (const task of Object.values(tasks)) {
         if (!task.ranAtLeastOnce)
             continue;
-        if (task.watching || !task.inputs)
+        if (!task.watch || task.watching)
             continue;
         task.watch();
         task.watching = true;
         watchingAtLeastOne = true;
     }
     if (!watchingAtLeastOne) {
-        console.error('No tasks have specified any inputs -- nothing to watch.');
+        console.error('No tasks have a watch options -- nothing to watch.');
         process.exit(1);
     }
 }
@@ -120,10 +67,11 @@ export { TaskFunction };
 
 export function task(
     name: string,
-    body: () => void|Promise<void>,
-    options: { inputs?: ReadonlyArray<string> } = {}
+    body: () => void|Promise<any>,
+    options: { watch?: (ReadonlyArray<string>|(() => void|Promise<any>)) } = {}
 ): TaskFunction {
-    const task = { name, inputs: options.inputs } as Partial<Task>;
+    const { watch } = options;
+    const task = { name } as Partial<Task>;
 
     task.run = (async (...args: never[]) => {
         if (args.length > 0)
@@ -141,7 +89,7 @@ export function task(
         task.ranAtLeastOnce = true;
     }) as TaskFunction;
 
-    task.watch = () => watchTask(task as Task);
+    task.watch = makeWatch(task as Task, watch);
 
     tasks[name] = task as Task;
     return task.run;

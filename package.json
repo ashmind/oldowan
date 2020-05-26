@@ -1,10 +1,11 @@
 {
   "name": "oldowan",
-  "version": "1.0.0-preview-3",
+  "version": "1.0.0-preview-4",
   "description": "A primitive build system",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ts-node-script ./build.ts"
+    "build": "ts-node-script ./build.ts",
+    "watch": "ts-node-script ./build.ts --watch"
   },
   "files": [
     "dist/*.*"
