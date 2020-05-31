@@ -2,17 +2,21 @@ import execa from 'execa';
 import type { Task, TaskFunction } from './task';
 import { makeWatch } from './watch';
 
-function formatDuration([seconds, nanoseconds]: [number, number]) {
+const nanosecondsIn1Millisecond = 1000000;
+
+function formatDuration([seconds, nanoseconds]: readonly [number, number]) {
     if (seconds === 0) {
-        if (nanoseconds > 1000000)
-            return Math.round(nanoseconds / 1000000) + 'ms';
+        if (nanoseconds > nanosecondsIn1Millisecond)
+            return Math.round(nanoseconds / nanosecondsIn1Millisecond) + 'ms';
         if (nanoseconds > 1000)
             return Math.round(nanoseconds / 1000) + 'us';
         return nanoseconds + 'ns';
     }
 
-    if (seconds < 60)
-        return `${seconds}.${Math.round(nanoseconds / 10000000)}s`;
+    if (seconds < 60) {
+        const milliseconds = Math.round(nanoseconds / nanosecondsIn1Millisecond);
+        return milliseconds > 0 ? `${seconds}.${milliseconds}s` : `${seconds}s`;
+    }
 
     return `${Math.floor(seconds / 60)}m${seconds % 60}s`;
 }
@@ -68,9 +72,12 @@ export { TaskFunction };
 export function task(
     name: string,
     body: () => void|Promise<any>,
-    options: { watch?: (ReadonlyArray<string>|(() => void|Promise<any>)) } = {}
+    options: {
+        timeout?: number,
+        watch?: (ReadonlyArray<string>|(() => void|Promise<any>))
+    } = {}
 ): TaskFunction {
-    const { watch } = options;
+    const { timeout = 10 * 60 * 1000, watch } = options;
     const task = { name } as Partial<Task>;
 
     task.run = (async (...args: never[]) => {
@@ -78,10 +85,19 @@ export function task(
             processTaskError(new Error(`Tasks do not support arguments (provided: ${args})`), name);
         console.log(`task ${name} starting...`);
         const startTime = process.hrtime();
+        const timer = timeout ? setTimeout(() => {
+            const timeoutAsHRTime = [Math.floor(timeout / 1000), (timeout % 1000) * nanosecondsIn1Millisecond] as const;
+            console.error(`task ${name} did not complete within ${formatDuration(timeoutAsHRTime)}, shutting down...`);
+            process.exit(1);
+        }, timeout) : null;
         try {
             await Promise.resolve(body());
+            if (timer)
+                clearTimeout(timer);
         }
         catch(e) {
+            if (timer)
+                clearTimeout(timer);
             processTaskError(e, name);
         }
         const duration = process.hrtime(startTime);
