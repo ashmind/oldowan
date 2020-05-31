@@ -48,11 +48,22 @@ function watchDefault(task: Watchable, inputs: ReadonlyArray<string>) {
 function watchCustom(task: Watchable, watch: () => void|Promise<any>) {
     // non-blocking
     (async () => {
-        try {
-            await Promise.resolve(watch());
-        }
-        catch (e) {
-            console.error(e);
+        while (true) {
+            const startTime = new Date();
+            try {
+                await Promise.resolve(watch());
+            }
+            catch (e) {
+                console.error(`task ${task.name} watch process failed:`);
+                console.error(e);
+                const duration = (new Date()).getTime() - startTime.getTime();
+                if (duration < 5000) {
+                    // failed in less than 5 sec, restarting might be dangerous if it will keep failing quickly
+                    console.error(`task ${task.name} watch process failed within 5 sec, shutting down...`);
+                    process.exit(1);
+                }
+                console.log(`task ${task.name} restarting watch...`);
+            }
         }
     })();
     logWatch(task.name);
